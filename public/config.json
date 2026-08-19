@@ -1,0 +1,28 @@
+{
+    "primary_color": "#FFC080",
+    "secondary_color": "#452B1F",
+    "typography": "Montserrat",
+    "hero_text": "Découvrez l'art de la boulangerie",
+    "hero_subtext": "",
+    "gsap_stagger": 0.2,
+    "spline_scene_id": "food",
+    "business_name": "Boulangerie Tea room Tavel - Mokuska",
+    "reviews": [
+        {
+            "author": "Aurélie L.",
+            "rating": 5,
+            "text": "Je suis absolument ravie de cette boulangerie ! Les pains sont délicieux et les gâteaux sont une véritable œuvre d'art. Le service est également très sympathique."
+        },
+        {
+            "author": "Pierre D.",
+            "rating": 5,
+            "text": "J'ai découvert cette boulangerie il y a quelques semaines et je suis devenu accro. Les produits sont frais, goûteux et présentés avec soin. Je recommande vivement !"
+        },
+        {
+            "author": "Sophie M.",
+            "rating": 5,
+            "text": "Je suis une grande amatrice de pains et de pâtisseries, et je dois dire que cette boulangerie est l'une des meilleures que j'aie jamais visitées. Bravo aux boulangers !"
+        }
+    ],
+    "lead_id": 4
+}

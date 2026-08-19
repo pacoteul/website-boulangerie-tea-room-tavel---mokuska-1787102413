@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Viewer Fallback</title>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: transparent; }
+    canvas { width: 100%; height: 100%; display: block; }
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-family: sans-serif;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">Chargement de la 3D...</div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      document.getElementById('loading').innerHTML = 
+        "<div style='text-align:center; color:#ff4444; background:black; padding:20px; z-index:999; position:relative;'>" +
+        "⚠️ Erreur Fatale JS: " + message + "</div>";
+    };
+
+    try {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+      
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      } catch (e) {
+        throw new Error("WebGL non supporté");
+      }
+      
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      document.body.appendChild(renderer.domElement);
+
+      if (THREE.RoomEnvironment) {
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmremGenerator.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+      }
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffdfb0, 2);
+      directionalLight.position.set(5, 10, 7);
+      scene.add(directionalLight);
+
+      // Debug Grid removed for production
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 2.0;
+      
+      camera.position.set(0, 0, 10);
+
+      const loader = new THREE.GLTFLoader();
+      
+      if (THREE.DRACOLoader) {
+        const dracoLoader = new THREE.DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        loader.setDRACOLoader(dracoLoader);
+      }
+      
+      const modelFiles = {
+        'food': '/models/bread_object_capture.glb',
+        'architecture': '/models/architecture.glb',
+        'tech': '/models/tech.glb',
+        'nature': '/models/nature.glb',
+        'abstract': '/models/abstract.glb',
+        'dentist': '/models/dentist.glb',
+        'agriculture': '/models/agriculture.glb',
+        'construction': '/models/construction.glb',
+        'garage': '/models/garage.glb'
+      };
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const modelId = urlParams.get('model') || 'food';
+      const modelUrl = modelFiles[modelId] || modelFiles['food'];
+      
+      loader.load(
+        modelUrl,
+        function (gltf) {
+          const model = gltf.scene;
+          
+          const box = new THREE.Box3().setFromObject(model);
+          if (box.isEmpty()) {
+              scene.add(model);
+              document.getElementById('loading').style.display = 'none';
+              return;
+          }
+
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          let maxDim = Math.max(size.x, size.y, size.z);
+          if (maxDim === 0 || !isFinite(maxDim)) maxDim = 1;
+          
+          const scale = 5 / maxDim;
+          model.scale.setScalar(scale);
+          model.position.sub(center.multiplyScalar(scale));
+          
+          scene.add(model);
+          document.getElementById('loading').style.display = 'none';
+        },
+        function (xhr) {
+          if (xhr.lengthComputable) {
+            const percentComplete = xhr.loaded / xhr.total * 100;
+            document.getElementById('loading').innerText = 'Chargement 3D... ' + Math.round(percentComplete) + '%';
+          }
+        },
+        function (error) {
+          document.getElementById('loading').innerHTML = 
+            "<div style='text-align:center; color:#ff4444; background:black; padding:20px;'>" +
+            "⚠️ Erreur de chargement 3D: " + error.message + "</div>";
+        }
+      );
+
+      window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }, false);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+    } catch (e) {
+      document.getElementById('loading').innerHTML = 
+        "<div style='text-align:center; color:#ff4444; background:black; padding:20px;'>" +
+        "⚠️ Exception Générale: " + e.message + "</div>";
+    }
+  </script>
+</body>
+</html>
